@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人消费记录系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            color: white;
+            padding: 25px 30px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        header h1 i {
+            margin-right: 12px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+        }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 25px 30px;
+            background-color: #f9fafc;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            border-left: 5px solid #4b6cb7;
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .income .stat-value {
+            color: #2ecc71;
+        }
+        
+        .expense .stat-value {
+            color: #e74c3c;
+        }
+        
+        .balance .stat-value {
+            color: #3498db;
+        }
+        
+        .content-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        .table-section {
+            grid-column: 1 / span 2;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            color: #4b6cb7;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .btn-primary {
+            background-color: #4b6cb7;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #3a5ca9;
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-warning {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background-color: #e67e22;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .data-table th {
+            background-color: #4b6cb7;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f9fafc;
+        }
+        
+        .data-table input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .data-table input:focus {
+            border-color: #4b6cb7;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(75, 108, 183, 0.2);
+        }
+        
+        .income-row {
+            background-color: rgba(46, 204, 113, 0.05) !important;
+        }
+        
+        .expense-row {
+            background-color: rgba(231, 76, 60, 0.05) !important;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+            height: 350px;
+        }
+        
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .chart-controls select {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eaeaea;
+            background-color: #f9fafc;
+        }
+        
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+        
+        @media (max-width: 1200px) {
+            .content-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-section {
+                grid-column: 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            header h1 {
+                font-size: 24px;
+            }
+            
+            .content-area {
+                padding: 20px 15px;
+            }
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i>📊</i> 个人消费记录系统</h1>
+            <p class="subtitle">记录您的每一笔收入和支出，轻松管理个人财务</p>
+        </header>
+        
+        <div class="dashboard">
+            <div class="stat-card">
+                <h3>当前年份总收入</h3>
+                <div class="stat-value" id="total-income">¥ 0.00</div>
+            </div>
+            <div class="stat-card expense">
+                <h3>当前年份总支出</h3>
+                <div class="stat-value" id="total-expense">¥ 0.00</div>
+            </div>
+            <div class="stat-card balance">
+                <h3>当前结余</h3>
+                <div class="stat-value" id="current-balance">¥ 0.00</div>
+            </div>
+            <div class="stat-card">
+                <h3>总记录数</h3>
+                <div class="stat-value" id="total-records">0</div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="content-area">
+                <div class="table-section">
+                    <h2 class="section-title"><i>📝</i> 消费记录表</h2>
+                    
+                    <div class="controls">
+                        <div class="btn-group">
+                            <button class="btn btn-primary" id="add-income-btn">
+                                <i>➕</i> 添加收入记录
+                            </button>
+                            <button class="btn btn-warning" id="add-expense-btn">
+                                <i>➖</i> 添加支出记录
+                            </button>
+                        </div>
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-success" id="import-btn">
+                                <i>📥</i> 导入Excel
+                            </button>
+                            <button class="btn btn-success" id="export-btn">
+                                <i>📤</i> 导出Excel
+                            </button>
+                            <input type="file" id="file-input" accept=".xlsx,.xls" style="display: none;">
+                        </div>
+                    </div>
+                    
+                    <table class="data-table" id="expense-table">
+                        <thead>
+                            <tr>
+                                <th width="15%">日期</th>
+                                <th width="20%">收入</th>
+                                <th width="20%">支出</th>
+                                <th width="25%">类别</th>
+                                <th width="10%">备注</th>
+                                <th width="10%">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                            <!-- 数据行将通过JavaScript动态添加 -->
+                        </tbody>
+                    </table>
+                    
+                    <div id="no-data-message" class="no-data">
+                        暂无消费记录，请点击上方按钮添加记录
+                    </div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2 class="section-title"><i>📈</i> 近五年收支情况</h2>
+                    <div class="chart-container">
+                        <canvas id="yearly-bar-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2 class="section-title"><i>🥧</i> 支出分类分析</h2>
+                    <div class="chart-container">
+                        <div class="chart-controls">
+                            <div>
+                                <label>选择时间段：</label>
+                                <select id="pie-chart-period">
+                                    <option value="year">年度</option>
+                                    <option value="month">月度</option>
+                                </select>
+                                <select id="pie-chart-year"></select>
+                                <select id="pie-chart-month" style="display: none;"></select>
+                            </div>
+                        </div>
+                        <canvas id="expense-pie-chart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-section">
+                    <h2 class="section-title"><i>📊</i> 月度收支趋势</h2>
+                    <div class="chart-container">
+                        <div class="chart-controls">
+                            <div>
+                                <label>选择年份：</label>
+                                <select id="monthly-bar-year"></select>
+                            </div>
+                        </div>
+                        <canvas id="monthly-bar-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>个人消费记录系统 &copy; 2023 | 数据本地存储，保护您的隐私</p>
+            <p style="font-size: 12px; margin-top: 5px;">提示：所有数据均存储在您的浏览器本地，清除浏览器数据将导致记录丢失，请定期导出备份</p>
+        </footer>
+    </div>
+
+    <script>
+        // 初始化变量
+        let records = JSON.parse(localStorage.getItem('expenseRecords')) || [];
+        const currentYear = new Date().getFullYear();
+        
+        // DOM 元素
+        const tableBody = document.getElementById('table-body');
+        const noDataMessage = document.getElementById('no-data-message');
+        const totalIncomeEl = document.getElementById('total-income');
+        const totalExpenseEl = document.getElementById('total-expense');
+        const currentBalanceEl = document.getElementById('current-balance');
+        const totalRecordsEl = document.getElementById('total-records');
+        
+        // 图表实例
+        let yearlyBarChart, expensePieChart, monthlyBarChart;
+        
+        // 初始化函数
+        function init() {
+            // 加载数据
+            loadRecords();
+            
+            // 初始化图表
+            initCharts();
+            
+            // 设置事件监听器
+            setupEventListeners();
+            
+            // 更新统计信息
+            updateStatistics();
+            
+            // 初始化年份选择器
+            initYearSelectors();
+        }
+        
+        // 加载记录到表格
+        function loadRecords() {
+            tableBody.innerHTML = '';
+            
+            if (records.length === 0) {
+                noDataMessage.style.display = 'block';
+                return;
+            }
+            
+            noDataMessage.style.display = 'none';
+            
+            // 按日期排序（最新的在前面）
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // 添加行
+            records.forEach((record, index) => {
+                addRowToTable(record, index);
+            });
+        }
+        
+        // 添加行到表格
+        function addRowToTable(record, index) {
+            const row = document.createElement('tr');
+            row.className = record.type === 'income' ? 'income-row' : 'expense-row';
+            
+            // 创建日期单元格
+            const dateCell = document.createElement('td');
+            const dateInput = document.createElement('input');
+            dateInput.type = 'date';
+            dateInput.value = record.date;
+            dateInput.addEventListener('change', (e) => {
+                updateRecord(index, 'date', e.target.value);
+            });
+            dateCell.appendChild(dateInput);
+            
+            // 创建收入单元格
+            const incomeCell = document.createElement('td');
+            const incomeInput = document.createElement('input');
+            incomeInput.type = 'number';
+            incomeInput.min = '0';
+            incomeInput.step = '0.01';
+            incomeInput.value = record.type === 'income' ? record.amount.toFixed(2) : '0.00';
+            incomeInput.addEventListener('change', (e) => {
+                updateRecord(index, 'amount', parseFloat(e.target.value) || 0);
+                updateRecord(index, 'type', 'income');
+            });
+            incomeCell.appendChild(incomeInput);
+            
+            // 创建支出单元格
+            const expenseCell = document.createElement('td');
+            const expenseInput = document.createElement('input');
+            expenseInput.type = 'number';
+            expenseInput.min = '0';
+            expenseInput.step = '0.01';
+            expenseInput.value = record.type === 'expense' ? record.amount.toFixed(2) : '0.00';
+            expenseInput.addEventListener('change', (e) => {
+                updateRecord(index, 'amount', parseFloat(e.target.value) || 0);
+                updateRecord(index, 'type', 'expense');
+            });
+            expenseCell.appendChild(expenseInput);
+            
+            // 创建类别单元格（可编辑输入框）
+            const categoryCell = document.createElement('td');
+            const categoryInput = document.createElement('input');
+            categoryInput.type = 'text';
+            categoryInput.value = record.category || '';
+            categoryInput.placeholder = record.type === 'income' ? '如：工资、奖金等' : '如：餐饮、购物等';
+            categoryInput.addEventListener('change', (e) => {
+                updateRecord(index, 'category', e.target.value);
+            });
+            categoryCell.appendChild(categoryInput);
+            
+            // 创建备注单元格
+            const noteCell = document.createElement('td');
+            const noteInput = document.createElement('input');
+            noteInput.type = 'text';
+            noteInput.value = record.note || '';
+            noteInput.placeholder = '备注信息（可选）';
+            noteInput.addEventListener('change', (e) => {
+                updateRecord(index, 'note', e.target.value);
+            });
+            noteCell.appendChild(noteInput);
+            
+            // 创建操作单元格
+            const actionCell = document.createElement('td');
+            const deleteButton = document.createElement('button');
+            deleteButton.className = 'delete-btn';
+            deleteButton.innerHTML = '<i>🗑️</i> 删除';
+            deleteButton.addEventListener('click', () => {
+                deleteRecord(index);
+            });
+            actionCell.appendChild(deleteButton);
+            
+            // 组装行
+            row.appendChild(dateCell);
+            row.appendChild(incomeCell);
+            row.appendChild(expenseCell);
+            row.appendChild(categoryCell);
+            row.appendChild(noteCell);
+            row.appendChild(actionCell);
+            
+            tableBody.appendChild(row);
+        }
+        
+        // 添加新记录
+        function addRecord(type) {
+            const today = new Date().toISOString().split('T')[0];
+            const defaultCategory = type === 'income' ? '工资' : '餐饮';
+            
+            const newRecord = {
+                id: Date.now(),
+                date: today,
+                amount: 0,
+                type: type,
+                category: defaultCategory,
+                note: ''
+            };
+            
+            records.unshift(newRecord);
+            saveRecords();
+            loadRecords();
+            updateStatistics();
+            updateCharts();
+        }
+        
+        // 更新记录
+        function updateRecord(index, field, value) {
+            if (field === 'type') {
+                records[index].type = value;
+                // 如果类型改变，重置类别
+                if (!records[index].category || records[index].category.trim() === '') {
+                    records[index].category = value === 'income' ? '工资' : '餐饮';
+                }
+            } else {
+                records[index][field] = value;
+            }
+            
+            saveRecords();
+            updateStatistics();
+            updateCharts();
+            
+            // 重新加载表格以更新显示
+            loadRecords();
+        }
+        
+        // 删除记录
+        function deleteRecord(index) {
+            if (confirm('确定要删除这条记录吗？')) {
+                records.splice(index, 1);
+                saveRecords();
+                loadRecords();
+                updateStatistics();
+                updateCharts();
+            }
+        }
+        
+        // 保存记录到本地存储
+        function saveRecords() {
+            localStorage.setItem('expenseRecords', JSON.stringify(records));
+        }
+        
+        // 更新统计信息
+        function updateStatistics() {
+            const currentYearRecords = records.filter(record => {
+                const recordYear = new Date(record.date).getFullYear();
+                return recordYear === currentYear;
+            });
+            
+            const totalIncome = currentYearRecords
+                .filter(record => record.type === 'income')
+                .reduce((sum, record) => sum + record.amount, 0);
+                
+            const totalExpense = currentYearRecords
+                .filter(record => record.type === 'expense')
+                .reduce((sum, record) => sum + record.amount, 0);
+                
+            const balance = totalIncome - totalExpense;
+            
+            totalIncomeEl.textContent = `¥ ${totalIncome.toFixed(2)}`;
+            totalExpenseEl.textContent = `¥ ${totalExpense.toFixed(2)}`;
+            currentBalanceEl.textContent = `¥ ${balance.toFixed(2)}`;
+            totalRecordsEl.textContent = records.length;
+        }
+        
+        // 初始化图表
+        function initCharts() {
+            // 近五年收支柱状图
+            const yearlyBarCtx = document.getElementById('yearly-bar-chart').getContext('2d');
+            yearlyBarChart = new Chart(yearlyBarCtx, {
+                type: 'bar',
+                data: getYearlyBarChartData(),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: '近五年年度收支对比'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 支出饼状图
+            const expensePieCtx = document.getElementById('expense-pie-chart').getContext('2d');
+            expensePieChart = new Chart(expensePieCtx, {
+                type: 'pie',
+                data: getExpensePieChartData('year', currentYear),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        },
+                        title: {
+                            display: true,
+                            text: '支出分类分布'
+                        }
+                    }
+                }
+            });
+            
+            // 月度收支柱状图
+            const monthlyBarCtx = document.getElementById('monthly-bar-chart').getContext('2d');
+            monthlyBarChart = new Chart(monthlyBarCtx, {
+                type: 'bar',
+                data: getMonthlyBarChartData(currentYear),
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: '月度收支趋势'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 获取近五年柱状图数据
+        function getYearlyBarChartData() {
+            const years = [];
+            const incomeData = [];
+            const expenseData = [];
+            
+            for (let i = 4; i >= 0; i--) {
+                const year = currentYear - i;
+                years.push(year.toString());
+                
+                const yearRecords = records.filter(record => {
+                    const recordYear = new Date(record.date).getFullYear();
+                    return recordYear === year;
+                });
+                
+                const yearIncome = yearRecords
+                    .filter(record => record.type === 'income')
+                    .reduce((sum, record) => sum + record.amount, 0);
+                    
+                const yearExpense = yearRecords
+                    .filter(record => record.type === 'expense')
+                    .reduce((sum, record) => sum + record.amount, 0);
+                    
+                incomeData.push(yearIncome);
+                expenseData.push(yearExpense);
+            }
+            
+            return {
+                labels: years,
+                datasets: [
+                    {
+                        label: '收入',
+                        data: incomeData,
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '支出',
+                        data: expenseData,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+        }
+        
+        // 获取支出饼状图数据
+        function getExpensePieChartData(period, year, month = null) {
+            let filteredRecords = records.filter(record => {
+                const recordYear = new Date(record.date).getFullYear();
+                const recordMonth = new Date(record.date).getMonth() + 1;
+                
+                if (record.type !== 'expense') return false;
+                if (period === 'year') {
+                    return recordYear === parseInt(year);
+                } else {
+                    return recordYear === parseInt(year) && recordMonth === parseInt(month);
+                }
+            });
+            
+            // 按类别分组
+            const categories = {};
+            filteredRecords.forEach(record => {
+                const category = record.category || '未分类';
+                if (!categories[category]) {
+                    categories[category] = 0;
+                }
+                categories[category] += record.amount;
+            });
+            
+            // 转换为图表数据格式
+            const labels = Object.keys(categories);
+            const data = Object.values(categories);
+            
+            // 生成颜色
+            const backgroundColors = labels.map((_, i) => {
+                const hue = (i * 137) % 360; // 使用黄金角近似值分布颜色
+                return `hsl(${hue}, 70%, 60%)`;
+            });
+            
+            return {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderWidth: 1
+                }]
+            };
+        }
+        
+        // 获取月度柱状图数据
+        function getMonthlyBarChartData(year) {
+            const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+            const incomeData = new Array(12).fill(0);
+            const expenseData = new Array(12).fill(0);
+            
+            const yearRecords = records.filter(record => {
+                const recordYear = new Date(record.date).getFullYear();
+                return recordYear === parseInt(year);
+            });
+            
+            yearRecords.forEach(record => {
+                const month = new Date(record.date).getMonth();
+                if (record.type === 'income') {
+                    incomeData[month] += record.amount;
+                } else {
+                    expenseData[month] += record.amount;
+                }
+            });
+            
+            return {
+                labels: months,
+                datasets: [
+                    {
+                        label: '收入',
+                        data: incomeData,
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(46, 204, 113, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: '支出',
+                        data: expenseData,
+                        backgroundColor: 'rgba(231, 76, 60, 0.7)',
+                        borderColor: 'rgba(231, 76, 60, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            };
+        }
+        
+        // 更新图表
+        function updateCharts() {
+            // 更新近五年柱状图
+            yearlyBarChart.data = getYearlyBarChartData();
+            yearlyBarChart.update();
+            
+            // 更新支出饼状图
+            const period = document.getElementById('pie-chart-period').value;
+            const year = document.getElementById('pie-chart-year').value;
+            const month = period === 'month' ? document.getElementById('pie-chart-month').value : null;
+            
+            expensePieChart.data = getExpensePieChartData(period, year, month);
+            expensePieChart.options.plugins.title.text = period === 'year' 
+                ? `${year}年支出分类分布` 
+                : `${year}年${month}月支出分类分布`;
+            expensePieChart.update();
+            
+            // 更新月度柱状图
+            const monthlyYear = document.getElementById('monthly-bar-year').value;
+            monthlyBarChart.data = getMonthlyBarChartData(monthlyYear);
+            monthlyBarChart.options.plugins.title.text = `${monthlyYear}年月度收支趋势`;
+            monthlyBarChart.update();
+        }
+        
+        // 初始化年份选择器
+        function initYearSelectors() {
+            const pieChartYear = document.getElementById('pie-chart-year');
+            const monthlyBarYear = document.getElementById('monthly-bar-year');
+            const pieChartMonth = document.getElementById('pie-chart-month');
+            
+            // 清空现有选项
+            pieChartYear.innerHTML = '';
+            monthlyBarYear.innerHTML = '';
+            pieChartMonth.innerHTML = '';
+            
+            // 获取所有有记录的年份
+            const yearsSet = new Set();
+            records.forEach(record => {
+                const year = new Date(record.date).getFullYear();
+                yearsSet.add(year);
+            });
+            
+            // 添加最近5年（包括未来年份）
+            const currentYear = new Date().getFullYear();
+            for (let i = 5; i >= 0; i--) {
+                const year = currentYear - i;
+                yearsSet.add(year);
+            }
+            
+            // 转换为数组并排序
+            const years = Array.from(yearsSet).sort((a, b) => a - b);
+            
+            // 填充年份选择器
+            years.forEach(year => {
+                const option1 = document.createElement('option');
+                option1.value = year;
+                option1.textContent = `${year}年`;
+                pieChartYear.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = year;
+                option2.textContent = `${year}年`;
+                monthlyBarYear.appendChild(option2);
+            });
+            
+            // 设置默认值为当前年份
+            pieChartYear.value = currentYear;
+            monthlyBarYear.value = currentYear;
+            
+            // 填充月份选择器
+            for (let i = 1; i <= 12; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `${i}月`;
+                pieChartMonth.appendChild(option);
+            }
+            
+            // 设置默认值为当前月份
+            pieChartMonth.value = new Date().getMonth() + 1;
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 添加收入记录按钮
+            document.getElementById('add-income-btn').addEventListener('click', () => {
+                addRecord('income');
+            });
+            
+            // 添加支出记录按钮
+            document.getElementById('add-expense-btn').addEventListener('click', () => {
+                addRecord('expense');
+            });
+            
+            // 导出Excel按钮
+            document.getElementById('export-btn').addEventListener('click', exportToExcel);
+            
+            // 导入Excel按钮
+            document.getElementById('import-btn').addEventListener('click', () => {
+                document.getElementById('file-input').click();
+            });
+            
+            // 文件选择变化
+            document.getElementById('file-input').addEventListener('change', importFromExcel);
+            
+            // 饼图时间段选择变化
+            document.getElementById('pie-chart-period').addEventListener('change', function() {
+                const monthSelect = document.getElementById('pie-chart-month');
+                monthSelect.style.display = this.value === 'month' ? 'inline-block' : 'none';
+                updateCharts();
+            });
+            
+            // 年份选择变化
+            document.getElementById('pie-chart-year').addEventListener('change', updateCharts);
+            document.getElementById('pie-chart-month').addEventListener('change', updateCharts);
+            document.getElementById('monthly-bar-year').addEventListener('change', updateCharts);
+        }
+        
+        // 导出到Excel（确保日期格式正确）
+        function exportToExcel() {
+            if (records.length === 0) {
+                alert('没有数据可以导出！');
+                return;
+            }
+            
+            // 准备数据 - 所有非日期字段都转换为字符串
+            const exportData = records.map(record => {
+                return {
+                    '日期': new Date(record.date), // 保持为Date对象，以便Excel识别为日期格式
+                    '收入': record.type === 'income' ? String(record.amount) : "0",
+                    '支出': record.type === 'expense' ? String(record.amount) : "0",
+                    '类别': String(record.category || ''),
+                    '备注': String(record.note || ''),
+                    '类型': record.type === 'income' ? '收入' : '支出'
+                };
+            });
+            
+            // 创建工作簿和工作表
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            
+            // 设置列格式：日期列使用日期格式，其他列使用文本格式
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+                const header = XLSX.utils.encode_col(C) + "1";
+                const cell = ws[header];
+                if (!cell) continue;
+                
+                // 找到日期列的索引
+                if (cell.v === '日期') {
+                    // 为该列的所有数据单元格设置日期格式
+                    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                        const cellRef = XLSX.utils.encode_col(C) + (R + 1);
+                        if (ws[cellRef]) {
+                            // 设置单元格格式为日期
+                            ws[cellRef].z = 'yyyy-mm-dd';
+                        }
+                    }
+                } else {
+                    // 为其他列的所有数据单元格设置文本格式
+                    for (let R = range.s.r + 1; R <= range.e.r; ++R) {
+                        const cellRef = XLSX.utils.encode_col(C) + (R + 1);
+                        if (ws[cellRef]) {
+                            // 对于数字，强制转换为字符串
+                            if (typeof ws[cellRef].v === 'number') {
+                                ws[cellRef].v = String(ws[cellRef].v);
+                                ws[cellRef].t = 's'; // 设置为字符串类型
+                            }
+                            // 设置单元格格式为文本
+                            ws[cellRef].z = '@';
+                        }
+                    }
+                }
+            }
+            
+            // 设置列宽
+            const wscols = [
+                {wch: 12}, // 日期
+                {wch: 10}, // 收入
+                {wch: 10}, // 支出
+                {wch: 15}, // 类别
+                {wch: 25}, // 备注
+                {wch: 10}  // 类型
+            ];
+            ws['!cols'] = wscols;
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '消费记录');
+            
+            // 生成文件名
+            const fileName = `个人消费记录_${new Date().toISOString().split('T')[0]}.xlsx`;
+            
+            // 保存文件
+            XLSX.writeFile(wb, fileName);
+        }
+        
+        // 从Excel导入（正确处理日期格式）
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                // 获取第一个工作表
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // 转换为JSON，处理日期格式
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                    raw: false, // 使用格式化值而不是原始值
+                    dateNF: 'yyyy-mm-dd' // 指定日期格式
+                });
+                
+                // 处理导入的数据
+                let importedCount = 0;
+                
+                jsonData.forEach(row => {
+                    // 检查必要字段
+                    if (!row['日期']) return;
+                    
+                    // 处理日期 - 尝试多种格式
+                    let dateValue = row['日期'];
+                    let formattedDate;
+                    
+                    // 如果是Date对象
+                    if (dateValue instanceof Date) {
+                        formattedDate = dateValue.toISOString().split('T')[0];
+                    } 
+                    // 如果是字符串
+                    else if (typeof dateValue === 'string') {
+                        // 尝试解析常见的日期格式
+                        const date = new Date(dateValue);
+                        if (!isNaN(date.getTime())) {
+                            formattedDate = date.toISOString().split('T')[0];
+                        } else {
+                            // 尝试处理Excel序列号
+                            const excelSerial = parseFloat(dateValue);
+                            if (!isNaN(excelSerial)) {
+                                const excelEpoch = new Date(1899, 11, 30);
+                                const resultDate = new Date(excelEpoch.getTime() + excelSerial * 24 * 60 * 60 * 1000);
+                                formattedDate = resultDate.toISOString().split('T')[0];
+                            } else {
+                                // 无法解析，使用今天
+                                formattedDate = new Date().toISOString().split('T')[0];
+                            }
+                        }
+                    }
+                    // 如果是数字（Excel序列号）
+                    else if (typeof dateValue === 'number') {
+                        const excelEpoch = new Date(1899, 11, 30);
+                        const resultDate = new Date(excelEpoch.getTime() + dateValue * 24 * 60 * 60 * 1000);
+                        formattedDate = resultDate.toISOString().split('T')[0];
+                    } else {
+                        // 无法解析，使用今天
+                        formattedDate = new Date().toISOString().split('T')[0];
+                    }
+                    
+                    // 确定类型和金额 - 所有金额都转换为数字
+                    let type, amount;
+                    
+                    const incomeStr = String(row['收入'] || '0').trim();
+                    const expenseStr = String(row['支出'] || '0').trim();
+                    const incomeNum = parseFloat(incomeStr) || 0;
+                    const expenseNum = parseFloat(expenseStr) || 0;
+                    
+                    if (incomeNum > 0) {
+                        type = 'income';
+                        amount = incomeNum;
+                    } else if (expenseNum > 0) {
+                        type = 'expense';
+                        amount = expenseNum;
+                    } else {
+                        // 尝试从类型字段推断
+                        const typeStr = String(row['类型'] || '').toLowerCase();
+                        if (typeStr.includes('收入') || typeStr === 'income') {
+                            type = 'income';
+                            amount = incomeNum;
+                        } else {
+                            type = 'expense';
+                            amount = expenseNum;
+                        }
+                    }
+                    
+                    // 处理类别和备注 - 确保是字符串
+                    const category = String(row['类别'] || '').trim();
+                    const note = String(row['备注'] || '').trim();
+                    
+                    // 创建新记录
+                    const newRecord = {
+                        id: Date.now() + Math.random(), // 生成唯一ID
+                        date: formattedDate,
+                        amount: amount || 0,
+                        type: type,
+                        category: category || (type === 'income' ? '工资' : '餐饮'),
+                        note: note
+                    };
+                    
+                    // 添加到记录数组
+                    records.push(newRecord);
+                    importedCount++;
+                });
+                
+                // 保存并更新UI
+                saveRecords();
+                loadRecords();
+                updateStatistics();
+                updateCharts();
+                initYearSelectors();
+                
+                // 重置文件输入
+                event.target.value = '';
+                
+                alert(`成功导入 ${importedCount} 条记录！`);
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // 格式化日期（辅助函数）
+        function formatDate(dateValue) {
+            if (!dateValue) return new Date().toISOString().split('T')[0];
+            
+            // 如果是日期对象
+            if (dateValue instanceof Date) {
+                return dateValue.toISOString().split('T')[0];
+            }
+            
+            // 如果是字符串
+            if (typeof dateValue === 'string') {
+                // 尝试解析各种格式
+                const date = new Date(dateValue);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().split('T')[0];
+                }
+                
+                // 处理Excel日期数字（如44562）
+                if (/^\d+$/.test(dateValue)) {
+                    const excelDate = parseInt(dateValue);
+                    // Excel日期从1900年1月1日开始（但Excel错误地将1900年视为闰年）
+                    const excelEpoch = new Date(1899, 11, 30);
+                    const resultDate = new Date(excelEpoch.getTime() + excelDate * 24 * 60 * 60 * 1000);
+                    return resultDate.toISOString().split('T')[0];
+                }
+            }
+            
+            // 默认返回今天
+            return new Date().toISOString().split('T')[0];
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+        
+        // 添加一些示例数据（如果没有数据）
+        if (records.length === 0) {
+            // 添加示例收入记录
+            const exampleRecords = [
+                {
+                    id: 1,
+                    date: new Date().toISOString().split('T')[0],
+                    amount: 8500,
+                    type: 'income',
+                    category: '工资',
+                    note: '本月工资'
+                },
+                {
+                    id: 2,
+                    date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+                    amount: 256.5,
+                    type: 'expense',
+                    category: '购物',
+                    note: '超市采购'
+                },
+                {
+                    id: 3,
+                    date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
+                    amount: 85,
+                    type: 'expense',
+                    category: '餐饮',
+                    note: '晚餐'
+                },
+                {
+                    id: 4,
+                    date: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0],
+                    amount: 120,
+                    type: 'expense',
+                    category: '交通',
+                    note: '打车费用'
+                }
+            ];
+            
+            records = exampleRecords;
+            saveRecords();
+        }
+    </script>
+</body>
+</html>
